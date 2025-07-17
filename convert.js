@@ -12,7 +12,7 @@ let plausibleDomain = process.argv[3] || ''; // IF domain is not specified, it w
 // This is important to ensure that the script has a valid file to process
 if (!inputFilePath) {
   console.error("ERROR: You must provide the path to the input Markdown file as the first argument.");
-  console.error("USEAGE: node convert.js <inputFilePath> [pageTitle] [plausibleDomain]");
+  console.error("\tUSE: node convert.js <inputFilePath> [pageTitle] [plausibleDomain]");
   process.exit(1); // Exit the script with an error code
 }
 
