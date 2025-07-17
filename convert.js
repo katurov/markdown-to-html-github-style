@@ -1,21 +1,19 @@
 var showdown  = require('showdown');
-var fs = require('fs');
-// --- ИЗМЕНЕНИЕ: Подключаем модуль 'path' для удобной работы с путями к файлам
-const path = require('path'); 
+var fs        = require('fs');
+const path    = require('path'); // ADDED 'path' module for better file path handling
 
-// --- ИЗМЕНЕНИЕ: Новая логика обработки аргументов
-// process.argv[2] теперь ОБЯЗАТЕЛЬНЫЙ аргумент - путь к файлу Markdown
-// process.argv[3] теперь НЕОБЯЗАТЕЛЬНЫЙ аргумент - заголовок страницы
-let inputFilePath = process.argv[2];
-let pageTitle = process.argv[3] || ''; // Если заголовок не указан, он будет пустым
-// plausibleDomain больше не используется в этой логике, но можно вернуть при необходимости
-let plausibleDomain = ""; 
+let inputFilePath   = process.argv[2];       // Path to the input file, e.g. '../my-docs/guide.md'
+let pageTitle       = process.argv[3] || ''; // If title is not specified, it will be empty
+let plausibleDomain = process.argv[3] || ''; // IF domain is not specified, it will be empty
 
-// --- ИЗМЕНЕНИЕ: Добавлена проверка наличия обязательного аргумента
+// ADDED check for inputFilePath
+// If the input file path is not provided, we log an error and exit the script
+// This prevents the script from running without a valid input file
+// This is important to ensure that the script has a valid file to process
 if (!inputFilePath) {
-  console.error("Ошибка: Вы должны указать путь к файлу для конвертации.");
-  console.error("Пример: node convert.js ../my-docs/guide.md \"Мой Гайд\"");
-  process.exit(1); // Выход из скрипта с кодом ошибки
+  console.error("ERROR: You must provide the path to the input Markdown file as the first argument.");
+  console.error("USEAGE: node convert.js <inputFilePath> [pageTitle] [plausibleDomain]");
+  process.exit(1); // Exit the script with an error code
 }
 
 var hljs = require ('highlight.js');
@@ -50,14 +48,13 @@ showdown.extension('highlight', function () {
   }];
 });
 
-// Пути к стилям остаются прежними, так как они находятся относительно самого скрипта
+// PATH: Read the CSS files for styling
 fs.readFile(__dirname + '/style.css', function (err, styleData) {
   fs.readFile(__dirname + '/node_modules/highlight.js/styles/atom-one-dark.css', function(err, highlightingStyles) {
-    // --- ИЗМЕНЕНИЕ: Читаем файл по пути, указанному в первом аргументе
+    // READING the input file
     fs.readFile(inputFilePath, function (err, data) {
       if (err) {
-        // Улучшаем сообщение об ошибке
-        console.error("Не удалось прочитать файл:", inputFilePath);
+        console.error("ERROR: Cannot read file:", inputFilePath);
         throw err; 
       }
       let text = data.toString();
@@ -100,19 +97,19 @@ fs.readFile(__dirname + '/style.css', function (err, styleData) {
 
       converter.setFlavor('github');
 
-      // --- ИЗМЕНЕНИЕ: Логика формирования пути для сохранения файла
-      // 1. Получаем базовое имя файла из входного пути (например, "README.md" из "../docs/README.md")
-      const inputFileName = path.basename(inputFilePath, '.md'); // Второй аргумент убирает расширение
-      // 2. Создаем имя HTML-файла
+      // CHANGE: Save the output HTML file in the current working directory
+      // 1. Get the input file name without the extension
+      const inputFileName = path.basename(inputFilePath, '.md'); 
+      // 2. Create the output file name by appending ".html" to the input file name
       const outputFileName = inputFileName + ".html";
-      // 3. Формируем путь для сохранения в текущей рабочей директории (откуда запущен скрипт)
+      // 3. Makig  the final output path by joining the current working directory with the output file name
       let finalOutputPath = path.join(process.cwd(), outputFileName);
 
       fs.writeFile(finalOutputPath, html, { flag: "wx" }, function(err) {
         if (err) {
-          console.log("Файл '" + finalOutputPath + "' уже существует. Операция отменена!");
+          console.log("File '" + finalOutputPath + "' already existed, aborting!");
         } else {
-          console.log("Готово, сохранено в " + finalOutputPath);
+          console.log("Done, saved as: " + finalOutputPath);
         }
       });
     });
