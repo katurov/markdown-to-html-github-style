@@ -1,8 +1,23 @@
 var showdown  = require('showdown');
 var fs = require('fs');
-let filename = process.argv[4] || "README.md"
-let pageTitle = process.argv[2] || ""
-let plausibleDomain = process.argv[3] || ""
+// --- ИЗМЕНЕНИЕ: Подключаем модуль 'path' для удобной работы с путями к файлам
+const path = require('path'); 
+
+// --- ИЗМЕНЕНИЕ: Новая логика обработки аргументов
+// process.argv[2] теперь ОБЯЗАТЕЛЬНЫЙ аргумент - путь к файлу Markdown
+// process.argv[3] теперь НЕОБЯЗАТЕЛЬНЫЙ аргумент - заголовок страницы
+let inputFilePath = process.argv[2];
+let pageTitle = process.argv[3] || ''; // Если заголовок не указан, он будет пустым
+// plausibleDomain больше не используется в этой логике, но можно вернуть при необходимости
+let plausibleDomain = ""; 
+
+// --- ИЗМЕНЕНИЕ: Добавлена проверка наличия обязательного аргумента
+if (!inputFilePath) {
+  console.error("Ошибка: Вы должны указать путь к файлу для конвертации.");
+  console.error("Пример: node convert.js ../my-docs/guide.md \"Мой Гайд\"");
+  process.exit(1); // Выход из скрипта с кодом ошибки
+}
+
 var hljs = require ('highlight.js');
 
 showdown.extension('highlight', function () {
@@ -35,10 +50,14 @@ showdown.extension('highlight', function () {
   }];
 });
 
+// Пути к стилям остаются прежними, так как они находятся относительно самого скрипта
 fs.readFile(__dirname + '/style.css', function (err, styleData) {
   fs.readFile(__dirname + '/node_modules/highlight.js/styles/atom-one-dark.css', function(err, highlightingStyles) {
-    fs.readFile(process.cwd() + '/' + filename, function (err, data) {
+    // --- ИЗМЕНЕНИЕ: Читаем файл по пути, указанному в первом аргументе
+    fs.readFile(inputFilePath, function (err, data) {
       if (err) {
+        // Улучшаем сообщение об ошибке
+        console.error("Не удалось прочитать файл:", inputFilePath);
         throw err; 
       }
       let text = data.toString();
@@ -80,15 +99,20 @@ fs.readFile(__dirname + '/style.css', function (err, styleData) {
       html = preContent + converter.makeHtml(text) + postContent
 
       converter.setFlavor('github');
-      // console.log(html);
 
-      let markdownFileNameWithoutPath = filename.replace(".md", ".html")
-      let filePath = process.cwd() + "/" + markdownFileNameWithoutPath
-      fs.writeFile(filePath, html, { flag: "wx" }, function(err) {
+      // --- ИЗМЕНЕНИЕ: Логика формирования пути для сохранения файла
+      // 1. Получаем базовое имя файла из входного пути (например, "README.md" из "../docs/README.md")
+      const inputFileName = path.basename(inputFilePath, '.md'); // Второй аргумент убирает расширение
+      // 2. Создаем имя HTML-файла
+      const outputFileName = inputFileName + ".html";
+      // 3. Формируем путь для сохранения в текущей рабочей директории (откуда запущен скрипт)
+      let finalOutputPath = path.join(process.cwd(), outputFileName);
+
+      fs.writeFile(finalOutputPath, html, { flag: "wx" }, function(err) {
         if (err) {
-          console.log("File '" + filePath + "' already exists. Aborted!");
+          console.log("Файл '" + finalOutputPath + "' уже существует. Операция отменена!");
         } else {
-          console.log("Done, saved to " + filePath);
+          console.log("Готово, сохранено в " + finalOutputPath);
         }
       });
     });
