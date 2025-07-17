@@ -54,10 +54,10 @@ npm install
 ## Usage
 
 ```
-node convert.js MyPageTitle
+node convert.js MyFileName.md MyPageTitle
 ```
 
-This will read the `README.md` from your current working directory and output the resulting HTML as `README.html` in the same directory.
+This will read the `MyFileName.md` from your current working directory and output the resulting HTML as `MyFileName.html` in the same directory.
 
 ## Open tasks
 
